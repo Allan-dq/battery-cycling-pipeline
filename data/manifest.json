@@ -1,0 +1,42 @@
+{
+  "datasets": {
+    "matr": {
+      "description": "Severson, Attia et al., Nature Energy 4, 383-391 (2019): 124+ A123 APR18650M1A LFP/graphite cells, fast-charging policies, cycled to 80% capacity. Toyota Research Institute, data.matr.io.",
+      "license": "CC BY 4.0",
+      "landing_page": "https://data.matr.io/1/projects/5c48dd2bc625d700019f3204",
+      "files": [
+        {
+          "name": "2017-05-12_batchdata_updated_struct_errorcorrect.mat",
+          "url": "https://data.matr.io/1/api/v1/file/5c86c0b5fa2ede00015ddf66/download",
+          "bytes": 3025320241,
+          "sha256": "9d928ab978f0e3c70b31cb833a749fedd35094d01af76475d69b40aa3497f5ba"
+        },
+        {
+          "name": "2017-06-30_batchdata_updated_struct_errorcorrect.mat",
+          "url": "https://data.matr.io/1/api/v1/file/5c86bf13fa2ede00015ddd82/download",
+          "bytes": 2007331155,
+          "sha256": "63ab200d09ecb237fee5ef3a5c5db76e3212e3206a0bd92f769e1427fed338b8"
+        },
+        {
+          "name": "2018-04-12_batchdata_updated_struct_errorcorrect.mat",
+          "url": "https://data.matr.io/1/api/v1/file/5c86bd64fa2ede00015ddbb2/download",
+          "bytes": 3236690412,
+          "sha256": "62c30e413b63e6144720e016deed3661fac8468641794a5807b123fe84717998"
+        }
+      ]
+    },
+    "nasa": {
+      "description": "NASA Ames Prognostics Center of Excellence, Battery Data Set (B. Saha and K. Goebel, 2007): 18650 Li-ion cells run through charge, discharge and impedance cycles to end of life; voltage, current and cell temperature time series.",
+      "license": "U.S. Government work (NASA open data); cite B. Saha and K. Goebel (2007), 'Battery Data Set', NASA Prognostics Data Repository, NASA Ames Research Center",
+      "landing_page": "https://www.nasa.gov/intelligent-systems-division/discovery-and-systems-health/pcoe/pcoe-data-set-repository/",
+      "files": [
+        {
+          "name": "5. Battery Data Set.zip",
+          "url": "https://phm-datasets.s3.amazonaws.com/NASA/5.+Battery+Data+Set.zip",
+          "bytes": 209708670,
+          "sha256": "82302a7db4fc1b34e0b6676326610438d43b816bdf11a69d1d012a464ef2f92e"
+        }
+      ]
+    }
+  }
+}
