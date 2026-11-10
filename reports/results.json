@@ -1,0 +1,899 @@
+{
+  "dataset": {
+    "cells": 169,
+    "cycles": 117576,
+    "non_empty_cycles": 117527,
+    "timeseries_rows": 119151684,
+    "cells_by_source": {
+      "matr": 135,
+      "nasa": 34
+    },
+    "timeseries_parquet_bytes": 3238184672,
+    "curves_parquet_bytes": 929643241,
+    "paper_cohort": {
+      "test1": 43,
+      "train": 41,
+      "test2": 40
+    }
+  },
+  "metrics_validation": {
+    "cycles_compared": 117439,
+    "discharge_capacity_abs_diff_mah_median": 0.5810386010545177,
+    "discharge_capacity_abs_diff_mah_p99": 46.57515088782891,
+    "discharge_capacity_within_1pct": 0.7086317151883105,
+    "coulombic_efficiency_median": 0.999784746552011,
+    "energy_efficiency_median": 0.8652976215464403,
+    "dcir_proxy_mohm_median": 19.617013840193195,
+    "dataset_ir_mohm_median": 16.461271,
+    "by_group": {
+      "b1": {
+        "cells": 46,
+        "cycles": 42158,
+        "capacity_offset_pct_median": 0.03898932476090231,
+        "capacity_offset_pct_p10": 0.03416798823451562,
+        "capacity_offset_pct_p90": 0.04745868632651671,
+        "bad_cycle_pct": 4.068029792684662,
+        "coulombic_efficiency_median": 0.9990836104904868
+      },
+      "b2": {
+        "cells": 43,
+        "cycles": 21527,
+        "capacity_offset_pct_median": 0.04104158041017875,
+        "capacity_offset_pct_p10": 0.0374031541525891,
+        "capacity_offset_pct_p90": 0.05009793289746026,
+        "bad_cycle_pct": 2.88939471361546,
+        "coulombic_efficiency_median": 0.9983623948421597
+      },
+      "b3": {
+        "cells": 46,
+        "cycles": 51007,
+        "capacity_offset_pct_median": 1.6633347317071723,
+        "capacity_offset_pct_p10": 0.2994241255419606,
+        "capacity_offset_pct_p90": 3.64220067847427,
+        "bad_cycle_pct": 0.20781461368047524,
+        "coulombic_efficiency_median": 1.0052732585963904
+      },
+      "nasa": {
+        "cells": 34,
+        "cycles": 2835,
+        "capacity_offset_pct_median": 2.0557199793045027,
+        "capacity_offset_pct_p10": 0.21569517330885268,
+        "capacity_offset_pct_p90": 23.705764507580643,
+        "bad_cycle_pct": 31.428571428571427,
+        "coulombic_efficiency_median": 0.9963679703135149
+      }
+    }
+  },
+  "cycle_life_check": {
+    "cells_compared": 43,
+    "exact_match": 43,
+    "within_1_cycle": 43,
+    "max_abs_diff": 0.0
+  },
+  "qc": {
+    "rules": {
+      "cycle": {
+        "matr": {
+          "min_samples": 10,
+          "max_gap_s": 60.0,
+          "v_min": 1.9,
+          "v_max": 3.7,
+          "max_abs_current_a": 11.0,
+          "t_min_c": 15.0,
+          "t_max_c": 60.0,
+          "max_temp_step_c": 3.0,
+          "capacity_rel_tol": 0.02,
+          "ce_min": 0.95,
+          "ce_max": 1.05
+        },
+        "nasa": {
+          "min_samples": 10,
+          "max_gap_s": 14400.0,
+          "v_min": 1.8,
+          "v_max": 4.3,
+          "max_abs_current_a": 5.0,
+          "t_min_c": -5.0,
+          "t_max_c": 80.0,
+          "max_temp_step_c": 3.0,
+          "capacity_rel_tol": 0.02,
+          "ce_min": 0.95,
+          "ce_max": 1.05
+        }
+      },
+      "cell": {
+        "robust_z": 3.5,
+        "early_first": 2,
+        "early_last": 100,
+        "temp_fault_frac": 0.05,
+        "iforest_contamination": 0.05,
+        "iforest_seed": 0
+      }
+    },
+    "cycle_flag_counts": {
+      "empty_cycle": {
+        "matr": 46,
+        "nasa": 3
+      },
+      "duplicate_cycle": {
+        "matr": 0,
+        "nasa": 0
+      },
+      "time_gap": {
+        "matr": 2566,
+        "nasa": 165
+      },
+      "time_not_monotonic": {
+        "matr": 223,
+        "nasa": 0
+      },
+      "voltage_out_of_range": {
+        "matr": 17,
+        "nasa": 225
+      },
+      "current_out_of_range": {
+        "matr": 3,
+        "nasa": 0
+      },
+      "temperature_missing": {
+        "matr": 0,
+        "nasa": 0
+      },
+      "temperature_out_of_range": {
+        "matr": 0,
+        "nasa": 0
+      },
+      "temperature_spike": {
+        "matr": 284,
+        "nasa": 9
+      },
+      "capacity_mismatch": {
+        "matr": 157,
+        "nasa": 698
+      },
+      "ce_out_of_range": {
+        "matr": 2106,
+        "nasa": 471
+      }
+    },
+    "cycles_with_any_flag_excl_empty": 3893,
+    "cells_flagged_by_rule": {
+      "flag_fade": [
+        "b1c20",
+        "b1c21",
+        "b2c0",
+        "b2c1",
+        "b2c12",
+        "b2c13",
+        "b2c18",
+        "b2c19",
+        "b2c23",
+        "b2c3",
+        "b2c4",
+        "b2c6",
+        "b3c21",
+        "b3c28",
+        "b3c6",
+        "nasa_B0040",
+        "nasa_B0051"
+      ],
+      "flag_temperature": [
+        "b1c3",
+        "b1c31",
+        "b2c25",
+        "b3c29",
+        "nasa_B0034"
+      ],
+      "flag_ir": [
+        "b2c36"
+      ],
+      "flag_ce": [
+        "nasa_B0050"
+      ],
+      "flag_temperature_sensor": [],
+      "flag_iforest": [
+        "b1c4",
+        "b2c0",
+        "b2c1",
+        "b3c17",
+        "b3c28",
+        "b3c29",
+        "b3c6",
+        "nasa_B0040",
+        "nasa_B0042"
+      ]
+    },
+    "cells_anomalous": {
+      "matr": [
+        "b1c20",
+        "b1c21",
+        "b1c3",
+        "b1c31",
+        "b1c4",
+        "b2c0",
+        "b2c1",
+        "b2c12",
+        "b2c13",
+        "b2c18",
+        "b2c19",
+        "b2c23",
+        "b2c25",
+        "b2c3",
+        "b2c36",
+        "b2c4",
+        "b2c6",
+        "b3c17",
+        "b3c21",
+        "b3c28",
+        "b3c29",
+        "b3c6"
+      ],
+      "nasa": [
+        "nasa_B0034",
+        "nasa_B0040",
+        "nasa_B0042",
+        "nasa_B0050",
+        "nasa_B0051"
+      ]
+    },
+    "vs_paper": {
+      "paper_noisy_batch3": [
+        "b3c2",
+        "b3c23",
+        "b3c32",
+        "b3c37",
+        "b3c42",
+        "b3c43"
+      ],
+      "paper_noisy_we_flag": [],
+      "paper_no_eol_batch1": [
+        "b1c10",
+        "b1c12",
+        "b1c13",
+        "b1c22",
+        "b1c8"
+      ],
+      "paper_no_eol_we_find": [
+        "b1c10",
+        "b1c12",
+        "b1c13",
+        "b1c22",
+        "b1c8"
+      ],
+      "we_find_no_eol": [
+        "b1c0",
+        "b1c1",
+        "b1c10",
+        "b1c11",
+        "b1c12",
+        "b1c13",
+        "b1c14",
+        "b1c15",
+        "b1c16",
+        "b1c17",
+        "b1c18",
+        "b1c19",
+        "b1c2",
+        "b1c20",
+        "b1c21",
+        "b1c22",
+        "b1c23",
+        "b1c24",
+        "b1c25",
+        "b1c26",
+        "b1c27",
+        "b1c28",
+        "b1c29",
+        "b1c3",
+        "b1c30",
+        "b1c31",
+        "b1c32",
+        "b1c33",
+        "b1c34",
+        "b1c35",
+        "b1c36",
+        "b1c37",
+        "b1c38",
+        "b1c39",
+        "b1c4",
+        "b1c40",
+        "b1c41",
+        "b1c42",
+        "b1c43",
+        "b1c44",
+        "b1c45",
+        "b1c5",
+        "b1c6",
+        "b1c7",
+        "b1c8",
+        "b1c9",
+        "b3c0",
+        "b3c1",
+        "b3c10",
+        "b3c11",
+        "b3c12",
+        "b3c13",
+        "b3c14",
+        "b3c15",
+        "b3c16",
+        "b3c17",
+        "b3c18",
+        "b3c19",
+        "b3c2",
+        "b3c20",
+        "b3c21",
+        "b3c22",
+        "b3c23",
+        "b3c24",
+        "b3c25",
+        "b3c26",
+        "b3c27",
+        "b3c28",
+        "b3c29",
+        "b3c3",
+        "b3c30",
+        "b3c31",
+        "b3c32",
+        "b3c33",
+        "b3c34",
+        "b3c35",
+        "b3c36",
+        "b3c37",
+        "b3c38",
+        "b3c39",
+        "b3c4",
+        "b3c40",
+        "b3c41",
+        "b3c42",
+        "b3c43",
+        "b3c44",
+        "b3c45",
+        "b3c5",
+        "b3c6",
+        "b3c7",
+        "b3c8",
+        "b3c9",
+        "nasa_B0007",
+        "nasa_B0025",
+        "nasa_B0027",
+        "nasa_B0028",
+        "nasa_B0029",
+        "nasa_B0030",
+        "nasa_B0031",
+        "nasa_B0032"
+      ]
+    }
+  },
+  "models": {
+    "outlier_cell": "b2c1",
+    "selection_rule": "lowest repeated 4-fold CV RMSE on the training cells, among candidates",
+    "selected_candidate": "enet_discharge_ica",
+    "best_baseline_by_cv": "discharge",
+    "models": {
+      "variance": {
+        "role": "baseline",
+        "description": "log10 var \u0394Q100-10(V) only",
+        "features": [
+          "dq_var"
+        ],
+        "n": {
+          "train": 41,
+          "test1": 43,
+          "test1_excl": 42,
+          "test2": 40
+        },
+        "rmse": {
+          "train": 103.44036500556649,
+          "test1": 138.171757794599,
+          "test1_excl": 138.6001524911008,
+          "test2": 196.346511868051
+        },
+        "mpe": {
+          "train": 14.082106132109354,
+          "test1": 14.739246910928905,
+          "test1_excl": 13.179109398098513,
+          "test2": 11.414763723229129
+        },
+        "cv_rmse_train": 116.8795939197773,
+        "params": {
+          "n_features": 1,
+          "alpha": 0.00014618254297296665,
+          "l1_ratio": 1.0,
+          "n_selected": 1,
+          "coefficients": {
+            "dq_var": -0.14603636042999368
+          }
+        },
+        "paper": {
+          "rmse": {
+            "train": 103,
+            "test1": 138,
+            "test1_excl": 138,
+            "test2": 196
+          },
+          "mpe": {
+            "train": 14.1,
+            "test1": 14.7,
+            "test1_excl": 13.2,
+            "test2": 11.4
+          }
+        }
+      },
+      "discharge": {
+        "role": "baseline",
+        "description": "6 discharge features",
+        "features": [
+          "dq_min",
+          "dq_var",
+          "dq_skew",
+          "dq_kurt",
+          "qd2",
+          "qd_max_minus_2"
+        ],
+        "n": {
+          "train": 41,
+          "test1": 43,
+          "test1_excl": 42,
+          "test2": 40
+        },
+        "rmse": {
+          "train": 70.02852973259813,
+          "test1": 86.12435188087694,
+          "test1_excl": 80.41154269012418,
+          "test2": 169.109186739493
+        },
+        "mpe": {
+          "train": 9.39702015397494,
+          "test1": 12.658412421069245,
+          "test1_excl": 9.45820125863899,
+          "test2": 8.577143814169537
+        },
+        "cv_rmse_train": 95.11296688804302,
+        "params": {
+          "n_features": 6,
+          "alpha": 0.06785192591324421,
+          "l1_ratio": 0.01,
+          "n_selected": 6,
+          "coefficients": {
+            "dq_min": -0.07344265410338872,
+            "dq_var": -0.06808013741751981,
+            "dq_skew": 0.011155539358956279,
+            "dq_kurt": 0.012739215132658434,
+            "qd2": 0.028179935633054872,
+            "qd_max_minus_2": -0.025326504544916497
+          }
+        },
+        "paper": {
+          "rmse": {
+            "train": 76,
+            "test1": 91,
+            "test1_excl": 86,
+            "test2": 173
+          },
+          "mpe": {
+            "train": 9.8,
+            "test1": 13.0,
+            "test1_excl": 10.1,
+            "test2": 8.6
+          }
+        }
+      },
+      "full": {
+        "role": "baseline",
+        "description": "9 features incl. charge time, temperature, IR",
+        "features": [
+          "dq_min",
+          "dq_var",
+          "fade_slope_2_100",
+          "fade_intercept_2_100",
+          "qd2",
+          "charge_time_first5",
+          "t_integral_2_100",
+          "ir_min_2_100",
+          "ir_diff_100_2"
+        ],
+        "n": {
+          "train": 41,
+          "test1": 43,
+          "test1_excl": 42,
+          "test2": 40
+        },
+        "rmse": {
+          "train": 59.66739476740161,
+          "test1": 157.60975617865398,
+          "test1_excl": 156.42252940595682,
+          "test2": 213.22608243183643
+        },
+        "mpe": {
+          "train": 6.3477585640222305,
+          "test1": 12.765077698195935,
+          "test1_excl": 9.831474275041325,
+          "test2": 10.673162876072686
+        },
+        "cv_rmse_train": 97.16845636920891,
+        "params": {
+          "n_features": 9,
+          "alpha": 0.036044134293514316,
+          "l1_ratio": 0.05,
+          "n_selected": 8,
+          "coefficients": {
+            "dq_min": -0.04565456079303159,
+            "dq_var": -0.049200711182364854,
+            "fade_slope_2_100": -0.0,
+            "fade_intercept_2_100": 0.0012192946188538994,
+            "qd2": 0.027810254208289777,
+            "charge_time_first5": 0.03574066213710911,
+            "t_integral_2_100": -0.032971905449467764,
+            "ir_min_2_100": -0.019184922691566016,
+            "ir_diff_100_2": -0.006896400016341365
+          }
+        },
+        "paper": {
+          "rmse": {
+            "train": 51,
+            "test1": 118,
+            "test1_excl": 100,
+            "test2": 214
+          },
+          "mpe": {
+            "train": 5.6,
+            "test1": 14.1,
+            "test1_excl": 7.5,
+            "test2": 10.7
+          }
+        }
+      },
+      "gbr_candidates": {
+        "role": "candidate",
+        "description": "gradient boosting on all 20 candidate features",
+        "features": [
+          "dq_min",
+          "dq_mean",
+          "dq_var",
+          "dq_skew",
+          "dq_kurt",
+          "dq_2v",
+          "fade_slope_2_100",
+          "fade_intercept_2_100",
+          "fade_slope_91_100",
+          "fade_intercept_91_100",
+          "qd2",
+          "qd_max_minus_2",
+          "qd100",
+          "charge_time_first5",
+          "t_max_2_100",
+          "t_min_2_100",
+          "t_integral_2_100",
+          "ir2",
+          "ir_min_2_100",
+          "ir_diff_100_2"
+        ],
+        "n": {
+          "train": 41,
+          "test1": 43,
+          "test1_excl": 42,
+          "test2": 40
+        },
+        "rmse": {
+          "train": 2.870541435168825,
+          "test1": 116.57044858195734,
+          "test1_excl": 114.49968711147923,
+          "test2": 310.691775385787
+        },
+        "mpe": {
+          "train": 0.31125854438861245,
+          "test1": 10.989033741295527,
+          "test1_excl": 8.29804633256489,
+          "test2": 17.616496766650855
+        },
+        "cv_rmse_train": 177.19030954218744,
+        "params": {
+          "n_features": 20
+        },
+        "paper": null
+      },
+      "enet_candidates_temp": {
+        "role": "candidate",
+        "description": "elastic net on 20 candidates + \u0394T100-10(V) and Tmax-trend features",
+        "features": [
+          "dq_min",
+          "dq_mean",
+          "dq_var",
+          "dq_skew",
+          "dq_kurt",
+          "dq_2v",
+          "fade_slope_2_100",
+          "fade_intercept_2_100",
+          "fade_slope_91_100",
+          "fade_intercept_91_100",
+          "qd2",
+          "qd_max_minus_2",
+          "qd100",
+          "charge_time_first5",
+          "t_max_2_100",
+          "t_min_2_100",
+          "t_integral_2_100",
+          "ir2",
+          "ir_min_2_100",
+          "ir_diff_100_2",
+          "dt_var",
+          "dt_mean",
+          "tmax_slope_2_100"
+        ],
+        "n": {
+          "train": 41,
+          "test1": 43,
+          "test1_excl": 42,
+          "test2": 40
+        },
+        "rmse": {
+          "train": 35.12065717265532,
+          "test1": 232.34526568261157,
+          "test1_excl": 224.23352825007615,
+          "test2": 252.3222314827614
+        },
+        "mpe": {
+          "train": 3.9127971466381557,
+          "test1": 17.315088325977214,
+          "test1_excl": 10.363248857163944,
+          "test2": 22.41542508552678
+        },
+        "cv_rmse_train": 108.45485246985439,
+        "params": {
+          "n_features": 23,
+          "alpha": 0.00016807440138819844,
+          "l1_ratio": 1.0,
+          "n_selected": 17,
+          "coefficients": {
+            "dq_min": 0.0,
+            "dq_mean": -0.18767926464484594,
+            "dq_var": 0.0,
+            "dq_skew": 0.006025552442782413,
+            "dq_kurt": -0.014027691083671119,
+            "dq_2v": 0.08288003119243455,
+            "fade_slope_2_100": -0.028913207496045052,
+            "fade_intercept_2_100": 0.016470210660705784,
+            "fade_slope_91_100": 0.0,
+            "fade_intercept_91_100": -0.0017335808211905392,
+            "qd2": 0.00505795972701601,
+            "qd_max_minus_2": 0.006769871633544494,
+            "qd100": 0.0,
+            "charge_time_first5": 0.023775192579549537,
+            "t_max_2_100": -0.0,
+            "t_min_2_100": 0.02467463254403311,
+            "t_integral_2_100": -0.06418876309656835,
+            "ir2": -0.01422036356118445,
+            "ir_min_2_100": 0.014051379594112807,
+            "ir_diff_100_2": -0.022237153676510506,
+            "dt_var": 0.010252776854570806,
+            "dt_mean": -0.0,
+            "tmax_slope_2_100": 0.00515276372623148
+          }
+        },
+        "paper": null
+      },
+      "enet_discharge_ica": {
+        "role": "candidate",
+        "description": "discharge model + cellpy dQ/dV peak features",
+        "features": [
+          "dq_min",
+          "dq_var",
+          "dq_skew",
+          "dq_kurt",
+          "qd2",
+          "qd_max_minus_2",
+          "ica_peak_ratio_100_10",
+          "ica_peak_shift_mv_100_10"
+        ],
+        "n": {
+          "train": 41,
+          "test1": 43,
+          "test1_excl": 42,
+          "test2": 40
+        },
+        "rmse": {
+          "train": 60.59481335336153,
+          "test1": 94.2006412712359,
+          "test1_excl": 89.83284405110923,
+          "test2": 162.79781360220449
+        },
+        "mpe": {
+          "train": 8.151659782753857,
+          "test1": 11.348186203316374,
+          "test1_excl": 8.29662104692441,
+          "test2": 10.716964516213226
+        },
+        "cv_rmse_train": 95.45206973905785,
+        "params": {
+          "n_features": 8,
+          "alpha": 0.015674674926002767,
+          "l1_ratio": 0.01,
+          "n_selected": 8,
+          "coefficients": {
+            "dq_min": -0.08918172335997447,
+            "dq_var": -0.0686328660177748,
+            "dq_skew": 0.007610335819647206,
+            "dq_kurt": 0.01264861518454617,
+            "qd2": 0.03199459843476221,
+            "qd_max_minus_2": -0.02788644726741993,
+            "ica_peak_ratio_100_10": -0.02197150618820244,
+            "ica_peak_shift_mv_100_10": 0.010335730109518078
+          }
+        },
+        "paper": null
+      },
+      "variance_noqc": {
+        "role": "baseline_noqc",
+        "description": "log10 var \u0394Q100-10(V) only; features without QC cleaning",
+        "features": [
+          "dq_var"
+        ],
+        "n": {
+          "train": 41,
+          "test1": 43,
+          "test1_excl": 42,
+          "test2": 40
+        },
+        "rmse": {
+          "train": 103.62258724407329,
+          "test1": 137.96135655089245,
+          "test1_excl": 138.38968301812247,
+          "test2": 195.99854681248743
+        },
+        "mpe": {
+          "train": 14.131258498462001,
+          "test1": 14.751193701042506,
+          "test1_excl": 13.194711256921074,
+          "test2": 11.414400841383362
+        },
+        "cv_rmse_train": 117.03980939071462,
+        "params": {
+          "n_features": 1,
+          "alpha": 0.0001461314051786571,
+          "l1_ratio": 1.0,
+          "n_selected": 1,
+          "coefficients": {
+            "dq_var": -0.14598527377347845
+          }
+        },
+        "paper": {
+          "rmse": {
+            "train": 103,
+            "test1": 138,
+            "test1_excl": 138,
+            "test2": 196
+          },
+          "mpe": {
+            "train": 14.1,
+            "test1": 14.7,
+            "test1_excl": 13.2,
+            "test2": 11.4
+          }
+        }
+      },
+      "discharge_noqc": {
+        "role": "baseline_noqc",
+        "description": "6 discharge features; features without QC cleaning",
+        "features": [
+          "dq_min",
+          "dq_var",
+          "dq_skew",
+          "dq_kurt",
+          "qd2",
+          "qd_max_minus_2"
+        ],
+        "n": {
+          "train": 41,
+          "test1": 43,
+          "test1_excl": 42,
+          "test2": 40
+        },
+        "rmse": {
+          "train": 69.0309913930368,
+          "test1": 310.56603213400274,
+          "test1_excl": 312.4193637263591,
+          "test2": 168.0877292719465
+        },
+        "mpe": {
+          "train": 9.254039184488846,
+          "test1": 16.566321832323,
+          "test1_excl": 13.43769772825509,
+          "test2": 9.698175919316562
+        },
+        "cv_rmse_train": 95.70034305342911,
+        "params": {
+          "n_features": 6,
+          "alpha": 0.055017535985402426,
+          "l1_ratio": 0.01,
+          "n_selected": 6,
+          "coefficients": {
+            "dq_min": -0.0763417618480761,
+            "dq_var": -0.069558638969043,
+            "dq_skew": 0.01065207208591843,
+            "dq_kurt": 0.015236719031180623,
+            "qd2": 0.02730893908937778,
+            "qd_max_minus_2": -0.02639852435071147
+          }
+        },
+        "paper": {
+          "rmse": {
+            "train": 76,
+            "test1": 91,
+            "test1_excl": 86,
+            "test2": 173
+          },
+          "mpe": {
+            "train": 9.8,
+            "test1": 13.0,
+            "test1_excl": 10.1,
+            "test2": 8.6
+          }
+        }
+      },
+      "full_noqc": {
+        "role": "baseline_noqc",
+        "description": "9 features incl. charge time, temperature, IR; features without QC cleaning",
+        "features": [
+          "dq_min",
+          "dq_var",
+          "fade_slope_2_100",
+          "fade_intercept_2_100",
+          "qd2",
+          "charge_time_first5",
+          "t_integral_2_100",
+          "ir_min_2_100",
+          "ir_diff_100_2"
+        ],
+        "n": {
+          "train": 41,
+          "test1": 43,
+          "test1_excl": 42,
+          "test2": 40
+        },
+        "rmse": {
+          "train": 55.9375107617661,
+          "test1": 160.53561969751456,
+          "test1_excl": 159.50962284476057,
+          "test2": 193.97143496488437
+        },
+        "mpe": {
+          "train": 6.068587555341537,
+          "test1": 12.801556599754576,
+          "test1_excl": 9.906474914215806,
+          "test2": 11.492355765904886
+        },
+        "cv_rmse_train": 92.48378321425176,
+        "params": {
+          "n_features": 9,
+          "alpha": 0.04161874834537407,
+          "l1_ratio": 0.01,
+          "n_selected": 8,
+          "coefficients": {
+            "dq_min": -0.05192586933735688,
+            "dq_var": -0.053408269857852214,
+            "fade_slope_2_100": -0.0,
+            "fade_intercept_2_100": 0.00832214348927696,
+            "qd2": 0.022528387991044087,
+            "charge_time_first5": 0.03338507707602626,
+            "t_integral_2_100": -0.03193475644498241,
+            "ir_min_2_100": -0.021278060098661022,
+            "ir_diff_100_2": -0.012696084163726768
+          }
+        },
+        "paper": {
+          "rmse": {
+            "train": 51,
+            "test1": 118,
+            "test1_excl": 100,
+            "test2": 214
+          },
+          "mpe": {
+            "train": 5.6,
+            "test1": 14.1,
+            "test1_excl": 7.5,
+            "test2": 10.7
+          }
+        }
+      }
+    }
+  }
+}

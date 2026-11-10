@@ -40,6 +40,12 @@ class NasaCell:
     summary: pd.DataFrame
 
 
+def _first(value) -> float:
+    """First element as float; NaN when the field is missing or empty."""
+    arr = np.ravel(np.asarray(value, dtype=float)) if value is not None else np.empty(0)
+    return float(arr[0]) if arr.size else float("nan")
+
+
 def _datevec(v) -> datetime:
     y, mo, d, h, mi, s = (float(x) for x in np.ravel(v)[:6])
     return datetime(int(y), int(mo), int(d), int(h), int(mi)) + timedelta(seconds=s)
@@ -97,7 +103,7 @@ def read_cell(path: Path) -> NasaCell:
             summary.append(
                 {
                     "cycle_index": cycle,
-                    "vendor_discharge_capacity_ah": float(np.ravel(d.get("Capacity", np.nan))[0]),
+                    "vendor_discharge_capacity_ah": _first(d.get("Capacity")),
                     "ambient_c": float(op["ambient_temperature"]),
                 }
             )
@@ -118,7 +124,7 @@ def read_cell(path: Path) -> NasaCell:
     s = pd.DataFrame(summary)
     if len(s):
         s = s.groupby("cycle_index", as_index=False).agg(
-            vendor_discharge_capacity_ah=("vendor_discharge_capacity_ah", "sum"),
+            vendor_discharge_capacity_ah=("vendor_discharge_capacity_ah", lambda x: x.sum(min_count=1)),
             ambient_c=("ambient_c", "first"),
         )
     readme = next(iter(sorted(path.parent.glob("README*.txt"))), None)

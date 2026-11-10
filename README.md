@@ -8,9 +8,10 @@ prediction against a published result.
 > Independent project on public data. Not affiliated with, or endorsed by,
 > Toyota Research Institute, MIT, Stanford, NASA, or any battery maker.
 
-- **Ingest** 8.3 GB of MATLAB files (124+ LFP/graphite cells, Severson et al.
-  2019) and NASA's PCoE battery set into one canonical schema, stored as
-  Parquet and queried through DuckDB. Downloads are checksummed.
+- **Ingest** 8.3 GB of MATLAB files (LFP/graphite cells from Severson et al.
+  2019, the standard early-life-prediction benchmark) and NASA's PCoE battery
+  set into one canonical schema, stored as Parquet and queried through
+  DuckDB. Downloads are checksummed.
 - **Per-cycle metrics** recomputed from the raw signals: charge/discharge
   capacity by coulomb counting, coulombic and energy efficiency, a DC
   resistance proxy, can-temperature mean/max/min/integral, dQ/dV curves
@@ -60,7 +61,7 @@ flowchart LR
 | Dataset | What | License / terms | Size |
 |---|---|---|---|
 | Severson, Attia et al., *Nature Energy* 4, 383–391 (2019), via [data.matr.io](https://data.matr.io/1/projects/5c48dd2bc625d700019f3204) (Toyota Research Institute) | A123 APR18650M1A LFP/graphite cells, 72 fast-charging policies, 30 °C chamber, cycled to 80% of 1.1 Ah; 5 s logging of current, voltage, can temperature | "All data is released under CC BY 4" (data.matr.io); please cite the paper | 3 files, 8.3 GB |
-| B. Saha and K. Goebel, "Battery Data Set", NASA Prognostics Data Repository, NASA Ames Research Center (2007) | 34 18650 Li-ion cells (2 Ah rated), charge/discharge/impedance at 4, 24 and 43 °C ambient, to end of life | U.S. Government work (NASA open data) | 1 zip, 0.2 GB |
+| B. Saha and K. Goebel, "Battery Data Set", NASA Prognostics Data Repository, NASA Ames Research Center (2007) | 34 18650 Li-ion cells (2 Ah rated; chemistry not stated), charge/discharge/impedance at 4–44 °C ambient | U.S. Government work (NASA open data) | 1 zip, 0.2 GB |
 
 `data/manifest.json` lists every file with its URL, byte size and SHA-256;
 `scripts/download_data.py` downloads (with resume) and verifies them. Raw and

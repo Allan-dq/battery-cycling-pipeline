@@ -45,7 +45,23 @@ fraction of bad cycles.
   contamination 5%, seed 0) catches cells that are unusual in combination.
 
 A cell is **anomalous** if any rule fires. Cells are compared only with cells
-of the same source (test campaign).
+of the same source (test campaign). Results are reported in two groups:
+
+- **degradation outliers** — the fade rule: the cell itself ages unusually
+  fast early on. That is a finding about the cell (what a field-reliability
+  team wants surfaced), not a measurement problem;
+- **measurement anomalies** — every other rule: temperature after the
+  test-condition correction, IR, coulombic efficiency, temperature sensor,
+  isolation forest.
+
+## End of life
+
+Cycle life = first cycle whose discharge capacity is below 0.88 Ah (80% of
+1.1 Ah). The MATR tests were stopped once capacity reached ~0.88 Ah, so the
+last logged cycle often reads 0.8801–0.8806 Ah; a test that ends at or below
+0.885 Ah counts as having reached 80% (cycle life = cycles + 1), the same rule
+as the authors' MATLAB loader. A cell whose last capacity is above 0.885 Ah
+never reached 80%.
 
 ## 3. What happens to anomalous cells
 
@@ -54,3 +70,14 @@ was flagged). The life-prediction benchmark keeps the paper's cohort so the
 numbers stay comparable with the paper; QC affects it only through the
 dropped bad cycles. A production pipeline would route anomalous cells to an
 engineer's review queue rather than silently drop them.
+
+## Amendments
+
+- 2026-11-09, after the first full run: (1) `capacity_mismatch` compares each
+  cycle with the cell's own median offset instead of with zero. Batch 3's
+  dataset capacities read 0.3–3.6% below coulomb counting on every cycle (a
+  batch-level calibration/processing difference; batches 1–2 agree within
+  0.05%), and the absolute 2% rule had marked 36% of batch-3 cycles as broken.
+  (2) The end-of-life rule above replaced "first cycle below 0.88 Ah", which
+  had missed every test that stopped at 0.8801–0.8806 Ah. (3) Cell results
+  are reported in the two groups above. No threshold was changed.

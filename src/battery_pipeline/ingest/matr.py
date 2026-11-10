@@ -182,12 +182,27 @@ def _read_cell(f: h5py.File, batch: h5py.Group, i: int, cell_id: str, label: str
     )
 
 
-def cycle_life_from_summary(discharge_capacity_ah: np.ndarray, threshold: float = EOL_CAPACITY_AH) -> float:
-    """First 1-based cycle whose discharge capacity is below ``threshold``.
+#: The tests were stopped once capacity reached ~0.88 Ah, so the last recorded
+#: cycle often sits just above it (0.8801-0.8806 Ah). Same rule as the authors'
+#: MATLAB loader: a test that ends at or below this counts as having reached 80%.
+EOL_STOP_TOLERANCE_AH = 0.885
 
-    Returns NaN when the cell never crosses it. Cycle 1 is skipped: its
-    capacity is often missing or zero in these files.
+
+def cycle_life_from_summary(discharge_capacity_ah: np.ndarray, threshold: float = EOL_CAPACITY_AH) -> float:
+    """Cycles to 80% capacity from the per-cycle discharge capacity (row k-1 = cycle k).
+
+    * first cycle whose capacity is below ``threshold`` -> that cycle number;
+    * otherwise, if the test stopped at end of life (last capacity <=
+      ``EOL_STOP_TOLERANCE_AH``) -> number of cycles + 1;
+    * otherwise NaN: the cell never reached 80%.
+
+    Zero entries (the empty cycle 1, dropped records) are ignored.
     """
     q = np.asarray(discharge_capacity_ah, dtype=float)
-    below = np.flatnonzero((q < threshold) & (np.arange(len(q)) >= 1) & (q > 0))
-    return float(below[0] + 1) if len(below) else float("nan")
+    valid = np.isfinite(q) & (q > 0)
+    below = np.flatnonzero(valid & (q < threshold))
+    if len(below):
+        return float(below[0] + 1)
+    if valid.any() and q[valid][-1] <= EOL_STOP_TOLERANCE_AH:
+        return float(len(q) + 1)
+    return float("nan")

@@ -57,8 +57,7 @@ def compute(lake: Lake) -> dict:
         }
 
     split = paper_split(cells)
-    cohort = cells.merge(split, on="cell_id")
-    both = cohort.dropna(subset=["cycle_life", "reported_cycle_life"])
+    both = cells[cells["source"] == "matr"].dropna(subset=["cycle_life", "reported_cycle_life"])
     life_diff = (both["cycle_life"] - both["reported_cycle_life"]).abs()
 
     flags["group"] = np.where(flags["cell_id"].str.startswith("nasa_"), "nasa", "matr")
@@ -66,11 +65,15 @@ def compute(lake: Lake) -> dict:
     rule_cols = [c for c in cell_flags.columns if c.startswith("flag_")]
     flagged_cells = {c: sorted(cell_flags.loc[cell_flags[c], "cell_id"]) for c in rule_cols}
     anomalous = set(cell_flags.loc[cell_flags["anomalous"], "cell_id"])
-    anomalous_matr = sorted(c for c in anomalous if not c.startswith("nasa_"))
-    anomalous_nasa = sorted(c for c in anomalous if c.startswith("nasa_"))
+
+    def _ids(col: str, source: str) -> list[str]:
+        sel = cell_flags[cell_flags[col] & (cell_flags["source"] == source)]
+        return sorted(sel["cell_id"])
+
     paper_noisy = {c for c, why in PAPER_REMOVED.items() if why == "noisy channel"}
     paper_no_eol = {c for c, why in PAPER_REMOVED.items() if why != "noisy channel"}
-    our_no_eol = set(cells.loc[cells["cycle_life"].isna(), "cell_id"])
+    matr_cells = cells[cells["source"] == "matr"]
+    our_no_eol = set(matr_cells.loc[matr_cells["cycle_life"].isna(), "cell_id"])
 
     out = {
         "dataset": {
@@ -105,19 +108,23 @@ def compute(lake: Lake) -> dict:
             "cycle_flag_counts": flag_counts,
             "cycles_with_any_flag_excl_empty": int(flags.loc[~flags["empty_cycle"], "any_flag"].sum()),
             "cells_flagged_by_rule": flagged_cells,
-            "cells_anomalous": {"matr": anomalous_matr, "nasa": anomalous_nasa},
+            "cells_anomalous": {src: _ids("anomalous", src) for src in ("matr", "nasa")},
+            "degradation_outliers": {src: _ids("degradation_outlier", src) for src in ("matr", "nasa")},
+            "measurement_anomalies": {src: _ids("measurement_anomaly", src) for src in ("matr", "nasa")},
             "vs_paper": {
                 "paper_noisy_batch3": sorted(paper_noisy),
                 "paper_noisy_we_flag": sorted(paper_noisy & anomalous),
+                "paper_noisy_never_reached_eol": sorted(paper_noisy & our_no_eol),
                 "paper_no_eol_batch1": sorted(paper_no_eol),
                 "paper_no_eol_we_find": sorted(paper_no_eol & our_no_eol),
-                "we_find_no_eol": sorted(our_no_eol),
+                "we_find_no_eol_matr": sorted(our_no_eol),
             },
         },
     }
     results_path = lake.root / "model_results.json"
     if results_path.exists():
         out["models"] = json.loads(results_path.read_text())
+        out["qc_effect"] = qc_effect(lake, out["models"]["models"])
     return out
 
 
@@ -173,13 +180,30 @@ def markdown(r: dict) -> str:
     vp = q["vs_paper"]
     lines += [
         "",
-        f"- Anomalous MATR cells (any cell-level rule): {len(q['cells_anomalous']['matr'])} — "
-        f"{', '.join(q['cells_anomalous']['matr']) or 'none'}.",
-        f"- Anomalous NASA cells: {len(q['cells_anomalous']['nasa'])} — {', '.join(q['cells_anomalous']['nasa']) or 'none'}.",
-        f"- Of the {len(vp['paper_noisy_batch3'])} batch-3 cells the paper dropped as noisy, the cell rules flag "
-        f"{len(vp['paper_noisy_we_flag'])}: {', '.join(vp['paper_noisy_we_flag']) or 'none'}.",
-        f"- Of the {len(vp['paper_no_eol_batch1'])} batch-1 cells the paper dropped for not reaching 80%, "
-        f"our end-of-life computation also finds {len(vp['paper_no_eol_we_find'])}.",
+        "| Cell-level result | MATR | NASA |",
+        "|---|---|---|",
+        "| Degradation outliers (early fade, \\|z\\| > 3.5) | "
+        + " | ".join(
+            f"{len(q['degradation_outliers'][s])}: {', '.join(q['degradation_outliers'][s]) or '–'}"
+            for s in ("matr", "nasa")
+        )
+        + " |",
+        "| Measurement anomalies (temperature, IR, CE, sensor, isolation forest) | "
+        + " | ".join(
+            f"{len(q['measurement_anomalies'][s])}: {', '.join(q['measurement_anomalies'][s]) or '–'}"
+            for s in ("matr", "nasa")
+        )
+        + " |",
+        "",
+        f"- Cycle life: our end-of-life rule reproduces the dataset's reported cycle life exactly for "
+        f"{r['cycle_life_check']['exact_match']} of {r['cycle_life_check']['cells_compared']} MATR cells "
+        f"(max difference {_fmt(r['cycle_life_check']['max_abs_diff'])} cycles).",
+        f"- Of the {len(vp['paper_no_eol_batch1'])} batch-1 cells the authors dropped for not reaching 80%, our rule "
+        f"finds {len(vp['paper_no_eol_we_find'])} ({len(vp['we_find_no_eol_matr'])} MATR cells in total never reach 80%).",
+        f"- Of the {len(vp['paper_noisy_batch3'])} batch-3 cells the authors' loader drops as noisy, "
+        f"{len(vp['paper_noisy_never_reached_eol'])} never reached 80% ({', '.join(vp['paper_noisy_never_reached_eol']) or 'none'}); "
+        f"the cell-level rules flag {len(vp['paper_noisy_we_flag'])} of the six"
+        f"{(': ' + ', '.join(vp['paper_noisy_we_flag'])) if vp['paper_noisy_we_flag'] else ''}.",
         "",
     ]
     if "models" in r:
@@ -209,7 +233,99 @@ def markdown(r: dict) -> str:
             f"(best baseline by the same CV: {m['best_baseline_by_cv']}).",
             "",
         ]
+        lines += findings(r)
     return "\n".join(lines)
+
+
+SPLIT_NAMES = {
+    "train": "train",
+    "test1": "primary test",
+    "test1_excl": "primary test excl.",
+    "test2": "secondary test",
+}
+
+
+def findings(r: dict) -> list[str]:
+    """Plain-language comparisons, every number computed from the results."""
+    m = r["models"]
+    models = m["models"]
+    out = ["**What the table says**", ""]
+    for name in ("variance", "discharge", "full"):
+        clean, raw = models.get(name), models.get(f"{name}_noqc")
+        if not clean or not clean.get("paper") or not raw:
+            continue
+        paper = clean["paper"]["rmse"]
+
+        def worst(res: dict, paper: dict = paper) -> tuple[float, str]:
+            gaps = {k: res["rmse"][k] - paper[k] for k in SPLIT_NAMES if k in res["rmse"]}
+            k = max(gaps, key=lambda key: abs(gaps[key]))
+            return gaps[k], SPLIT_NAMES[k]
+
+        (gc, kc), (gr, kr) = worst(clean), worst(raw)
+        out.append(
+            f"- `{name}`: largest RMSE gap to the paper is {gc:+.0f} cycles ({kc}) with QC cleaning "
+            f"and {gr:+.0f} cycles ({kr}) without."
+        )
+    qe = r.get("qc_effect")
+    if qe:
+        out.append(
+            f"- QC cleaning matters most for `{qe['model']}` on the primary test set "
+            f"({qe['rmse_clean']:.0f} vs. {qe['rmse_raw']:.0f} cycles). Most of the difference is one cell, "
+            f"`{qe['cell_id']}` (observed {qe['observed']:.0f} cycles): predicted {qe['pred_raw']:.0f} from "
+            f"uncleaned features and {qe['pred_clean']:.0f} after its {qe['bad_cycles']} broken early cycle(s) "
+            f"are dropped."
+        )
+    sel, base = models[m["selected_candidate"]], models[m["best_baseline_by_cv"]]
+    verdict = []
+    for k in ("test1_excl", "test2"):
+        d = sel["rmse"][k] - base["rmse"][k]
+        verdict.append(f"{SPLIT_NAMES[k]} {sel['rmse'][k]:.0f} vs. {base['rmse'][k]:.0f} ({d:+.0f})")
+    better = all(sel["rmse"][k] < base["rmse"][k] for k in ("test1_excl", "test2"))
+    out.append(
+        f"- Selected candidate `{m['selected_candidate']}` vs. best baseline `{m['best_baseline_by_cv']}`: "
+        + "; ".join(verdict)
+        + (
+            ". It is better on both test sets."
+            if better
+            else ". It does not beat the baseline on both test sets."
+        )
+    )
+    n_full = models["full"]["n"]
+    out.append(
+        f"- `full` is scored on {n_full['train']}/{n_full['test1']}/{n_full['test2']} train/primary/secondary "
+        f"cells; the paper dropped 4 cells from its full model because temperature probes lost contact, and "
+        f"our temperature checks do not single those out."
+    )
+    out.append("")
+    return out
+
+
+def qc_effect(lake: Lake, models: dict) -> dict | None:
+    """Which cell drives the biggest primary-test difference between cleaned and raw features."""
+    path = lake.table("predictions")
+    if not path.exists():
+        return None
+    pairs = [n for n in ("variance", "discharge", "full") if n in models and f"{n}_noqc" in models]
+    if not pairs:
+        return None
+    name = max(pairs, key=lambda n: abs(models[n]["rmse"]["test1"] - models[f"{n}_noqc"]["rmse"]["test1"]))
+    pred = pd.read_parquet(path)
+    pred = pred[pred["split"] == "test1"]
+    clean = pred[pred["model"] == name].set_index("cell_id")
+    raw = pred[pred["model"] == f"{name}_noqc"].set_index("cell_id")
+    err = (raw["predicted"] - raw["cycle_life"]).abs() - (clean["predicted"] - clean["cycle_life"]).abs()
+    cell = str(err.idxmax())
+    feats = pd.read_parquet(lake.table("features")).set_index("cell_id")
+    return {
+        "model": name,
+        "rmse_clean": models[name]["rmse"]["test1"],
+        "rmse_raw": models[f"{name}_noqc"]["rmse"]["test1"],
+        "cell_id": cell,
+        "observed": float(clean.at[cell, "cycle_life"]),
+        "pred_clean": float(clean.at[cell, "predicted"]),
+        "pred_raw": float(raw.at[cell, "predicted"]),
+        "bad_cycles": int(feats.at[cell, "n_bad_cycles_2_100"]) if cell in feats.index else None,
+    }
 
 
 def write(lake: Lake, out_dir: Path) -> dict:

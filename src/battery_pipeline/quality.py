@@ -239,6 +239,10 @@ def cell_flags(
         ind["flag_iforest"] = model.predict(scaled) == -1
     flag_cols = [c for c in ind.columns if c.startswith("flag_")]
     ind["n_flags"] = ind[flag_cols].sum(axis=1)
+    # fast early fade is a property of the cell (a degradation outlier, what a field-reliability
+    # team wants surfaced); the other rules point at the measurement or the test setup
+    ind["degradation_outlier"] = ind["flag_fade"]
+    ind["measurement_anomaly"] = ind[[c for c in flag_cols if c != "flag_fade"]].any(axis=1)
     ind["anomalous"] = ind[flag_cols].any(axis=1)
     return ind
 

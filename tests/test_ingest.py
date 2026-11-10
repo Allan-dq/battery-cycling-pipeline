@@ -66,3 +66,19 @@ def test_nasa_reader_builds_charge_plus_discharge_cycles():
         "vendor_discharge_capacity_ah"
     ]
     assert rel.median() < 0.02
+
+
+def test_nasa_missing_capacity_stays_missing():
+    # B0050/B0052 have discharge records with an empty Capacity field
+    assert np.isnan(nasa._first(np.array([])))
+    assert np.isnan(nasa._first(None))
+    assert nasa._first(np.array([[1.85]])) == 1.85
+
+
+def test_cycle_life_rule_matches_the_authors_loader():
+    q = np.r_[0.0, np.linspace(1.08, 0.8803, 99)]  # stopped just above 0.88 after 100 cycles
+    assert matr.cycle_life_from_summary(q) == 101
+    q2 = np.r_[0.0, 1.07, 1.0, 0.879, 0.87]  # crosses 0.88 at cycle 4
+    assert matr.cycle_life_from_summary(q2) == 4
+    q3 = np.r_[0.0, 1.07, 1.0, 0.95]  # stopped early, never reached 80%
+    assert np.isnan(matr.cycle_life_from_summary(q3))
