@@ -113,7 +113,9 @@ class Lake:
             )
             views = resources.files("battery_pipeline").joinpath("sql/views.sql").read_text()
             for statement in _split_sql(views):
-                present = {r[0] for r in con.execute("SELECT table_name FROM information_schema.tables").fetchall()}
+                present = {
+                    r[0] for r in con.execute("SELECT table_name FROM information_schema.tables").fetchall()
+                }
                 if _referenced_tables(statement) <= present:
                     con.execute(statement)
         finally:

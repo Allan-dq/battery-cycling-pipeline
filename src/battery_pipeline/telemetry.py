@@ -17,9 +17,15 @@ REGISTRY = CollectorRegistry()
 ROWS = Counter("bcp_rows_processed", "Time-series rows processed", ["stage"], registry=REGISTRY)
 CYCLES = Counter("bcp_cycles_processed", "Cycles processed", ["stage"], registry=REGISTRY)
 CELLS = Counter("bcp_cells_processed", "Cells processed", ["stage"], registry=REGISTRY)
-DURATION = Gauge("bcp_stage_duration_seconds", "Wall time of the last run of a stage", ["stage"], registry=REGISTRY)
-ROWS_PER_S = Gauge("bcp_stage_rows_per_second", "Rows per second in the last run", ["stage"], registry=REGISTRY)
-LAST_SUCCESS = Gauge("bcp_stage_last_success_unixtime", "When the stage last finished", ["stage"], registry=REGISTRY)
+DURATION = Gauge(
+    "bcp_stage_duration_seconds", "Wall time of the last run of a stage", ["stage"], registry=REGISTRY
+)
+ROWS_PER_S = Gauge(
+    "bcp_stage_rows_per_second", "Rows per second in the last run", ["stage"], registry=REGISTRY
+)
+LAST_SUCCESS = Gauge(
+    "bcp_stage_last_success_unixtime", "When the stage last finished", ["stage"], registry=REGISTRY
+)
 
 
 @contextmanager

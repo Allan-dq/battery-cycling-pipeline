@@ -40,12 +40,18 @@ SEED = 0
 #: LBL accepted manuscript, escholarship.org/uc/item/9532z8t0). test1_excl
 #: excludes the one primary-test cell that "reaches 80% SOH rapidly".
 PAPER = {
-    "variance": {"rmse": {"train": 103, "test1": 138, "test1_excl": 138, "test2": 196},
-                 "mpe": {"train": 14.1, "test1": 14.7, "test1_excl": 13.2, "test2": 11.4}},
-    "discharge": {"rmse": {"train": 76, "test1": 91, "test1_excl": 86, "test2": 173},
-                  "mpe": {"train": 9.8, "test1": 13.0, "test1_excl": 10.1, "test2": 8.6}},
-    "full": {"rmse": {"train": 51, "test1": 118, "test1_excl": 100, "test2": 214},
-             "mpe": {"train": 5.6, "test1": 14.1, "test1_excl": 7.5, "test2": 10.7}},
+    "variance": {
+        "rmse": {"train": 103, "test1": 138, "test1_excl": 138, "test2": 196},
+        "mpe": {"train": 14.1, "test1": 14.7, "test1_excl": 13.2, "test2": 11.4},
+    },
+    "discharge": {
+        "rmse": {"train": 76, "test1": 91, "test1_excl": 86, "test2": 173},
+        "mpe": {"train": 9.8, "test1": 13.0, "test1_excl": 10.1, "test2": 8.6},
+    },
+    "full": {
+        "rmse": {"train": 51, "test1": 118, "test1_excl": 100, "test2": 214},
+        "mpe": {"train": 5.6, "test1": 14.1, "test1_excl": 7.5, "test2": 10.7},
+    },
 }
 
 
@@ -95,12 +101,27 @@ SPECS = [
     Spec("variance", F.VARIANCE_FEATURES, elastic_net, "baseline", "log10 var ΔQ100-10(V) only"),
     Spec("discharge", F.DISCHARGE_FEATURES, elastic_net, "baseline", "6 discharge features"),
     Spec("full", F.FULL_FEATURES, elastic_net, "baseline", "9 features incl. charge time, temperature, IR"),
-    Spec("gbr_candidates", F.CANDIDATE_FEATURES, gradient_boosting, "candidate",
-         "gradient boosting on all 20 candidate features"),
-    Spec("enet_candidates_temp", F.CANDIDATE_FEATURES + F.TEMPERATURE_EXTRA, elastic_net, "candidate",
-         "elastic net on 20 candidates + ΔT100-10(V) and Tmax-trend features"),
-    Spec("enet_discharge_ica", F.DISCHARGE_FEATURES + F.ICA_EXTRA, elastic_net, "candidate",
-         "discharge model + cellpy dQ/dV peak features"),
+    Spec(
+        "gbr_candidates",
+        F.CANDIDATE_FEATURES,
+        gradient_boosting,
+        "candidate",
+        "gradient boosting on all 20 candidate features",
+    ),
+    Spec(
+        "enet_candidates_temp",
+        F.CANDIDATE_FEATURES + F.TEMPERATURE_EXTRA,
+        elastic_net,
+        "candidate",
+        "elastic net on 20 candidates + ΔT100-10(V) and Tmax-trend features",
+    ),
+    Spec(
+        "enet_discharge_ica",
+        F.DISCHARGE_FEATURES + F.ICA_EXTRA,
+        elastic_net,
+        "candidate",
+        "discharge model + cellpy dQ/dV peak features",
+    ),
 ]
 
 
@@ -112,11 +133,20 @@ def mpe(y: np.ndarray, p: np.ndarray) -> float:
     return float(np.mean(np.abs(y - p) / y) * 100)
 
 
+def _sized(pipe: Pipeline, n: int) -> Pipeline:
+    """Shrink the inner CV for tiny samples (the committed fixture); no-op for >= 8 cells."""
+    est = pipe.named_steps["model"]
+    if isinstance(est, ElasticNetCV) and n < 8:
+        est.cv = RepeatedKFold(n_splits=max(2, min(4, n)), n_repeats=5, random_state=SEED)
+    return pipe
+
+
 def cv_rmse(make: Callable[[], Pipeline], x: np.ndarray, y_log: np.ndarray, n_repeats: int = 5) -> float:
     """Repeated 4-fold CV RMSE in cycles on the training cells."""
     errs = []
-    for tr, va in RepeatedKFold(n_splits=4, n_repeats=n_repeats, random_state=SEED + 1).split(x):
-        m = clone(make()).fit(x[tr], y_log[tr])
+    k = max(2, min(4, len(x)))
+    for tr, va in RepeatedKFold(n_splits=k, n_repeats=n_repeats, random_state=SEED + 1).split(x):
+        m = _sized(clone(make()), len(tr)).fit(x[tr], y_log[tr])
         errs.append(rmse(10 ** y_log[va], 10 ** m.predict(x[va])))
     return float(np.mean(errs))
 
@@ -140,7 +170,7 @@ def fit_spec(spec: Spec, data: pd.DataFrame, outlier: str | None) -> Result:
     train = use[use["split"] == "train"]
     x_tr = train[spec.features].to_numpy(float)
     y_tr = np.log10(train["cycle_life"].to_numpy(float))
-    pipe = spec.make().fit(x_tr, y_tr)
+    pipe = _sized(spec.make(), len(x_tr)).fit(x_tr, y_tr)
     pred = use[["cell_id", "split", "cycle_life"]].copy()
     pred["predicted"] = 10 ** pipe.predict(use[spec.features].to_numpy(float))
     pred["model"] = spec.name
@@ -162,8 +192,9 @@ def fit_spec(spec: Spec, data: pd.DataFrame, outlier: str | None) -> Result:
     params: dict = {"n_features": len(spec.features)}
     est = pipe.named_steps["model"]
     if isinstance(est, ElasticNetCV):
-        params.update(alpha=float(est.alpha_), l1_ratio=float(est.l1_ratio_),
-                      n_selected=int(np.sum(est.coef_ != 0)))
+        params.update(
+            alpha=float(est.alpha_), l1_ratio=float(est.l1_ratio_), n_selected=int(np.sum(est.coef_ != 0))
+        )
         params["coefficients"] = {f: float(c) for f, c in zip(spec.features, est.coef_, strict=True)}
     return Result(spec, pipe, n, scores_r, scores_p, cv_rmse(spec.make, x_tr, y_tr), pred, params, x_tr)
 
@@ -185,14 +216,22 @@ def run(
     if data_noqc is not None:
         for s in SPECS:
             if s.role == "baseline":
-                noqc = Spec(f"{s.name}_noqc", s.features, s.make, "baseline_noqc",
-                            f"{s.description}; features without QC cleaning")
+                noqc = Spec(
+                    f"{s.name}_noqc",
+                    s.features,
+                    s.make,
+                    "baseline_noqc",
+                    f"{s.description}; features without QC cleaning",
+                )
                 results.append(fit_spec(noqc, data_noqc, outlier))
     candidates = [r for r in results if r.spec.role == "candidate"]
     selected = min(candidates, key=lambda r: r.cv_rmse)
     best_baseline = min((r for r in results if r.spec.role == "baseline"), key=lambda r: r.cv_rmse)
     for r in results:
-        log(f"  {r.spec.name:22s} cv={r.cv_rmse:6.1f}  " + "  ".join(f"{k}={v:6.1f}" for k, v in r.rmse.items()))
+        log(
+            f"  {r.spec.name:22s} cv={r.cv_rmse:6.1f}  "
+            + "  ".join(f"{k}={v:6.1f}" for k, v in r.rmse.items())
+        )
 
     _log_mlflow(results, selected, best_baseline, tracking_dir, register)
 
@@ -219,7 +258,9 @@ def run(
     }
 
 
-def _log_mlflow(results: list[Result], selected: Result, baseline: Result, tracking_dir: Path, register: bool) -> None:
+def _log_mlflow(
+    results: list[Result], selected: Result, baseline: Result, tracking_dir: Path, register: bool
+) -> None:
     import mlflow
     import mlflow.sklearn
     from mlflow.models import infer_signature
@@ -233,8 +274,13 @@ def _log_mlflow(results: list[Result], selected: Result, baseline: Result, track
     for r in results:
         with mlflow.start_run(run_name=r.spec.name):
             mlflow.set_tags({"role": r.spec.role, "dataset": "MATR Severson 2019", "split": "paper"})
-            mlflow.log_params({"features": ",".join(r.spec.features), "estimator": type(r.pipeline[-1]).__name__,
-                               **{k: v for k, v in r.params.items() if not isinstance(v, dict)}})
+            mlflow.log_params(
+                {
+                    "features": ",".join(r.spec.features),
+                    "estimator": type(r.pipeline[-1]).__name__,
+                    **{k: v for k, v in r.params.items() if not isinstance(v, dict)},
+                }
+            )
             mlflow.log_metrics({f"rmse_{k}": v for k, v in r.rmse.items()})
             mlflow.log_metrics({f"mpe_{k}": v for k, v in r.mpe.items()})
             mlflow.log_metric("cv_rmse_train", r.cv_rmse)
@@ -252,7 +298,16 @@ def _log_mlflow(results: list[Result], selected: Result, baseline: Result, track
                 signature=infer_signature(r.x_train, r.pipeline.predict(r.x_train)),
                 input_example=r.x_train[:2],
                 registered_model_name=reg_name,
+                # the model was fitted in this process, so its own sklearn types are trusted
+                skops_trusted_types=trusted_types(r.pipeline),
             )
+
+
+def trusted_types(pipeline: Pipeline) -> list[str]:
+    """Types skops would refuse to load for this (self-made) pipeline."""
+    import skops.io as sio
+
+    return sorted(sio.get_untrusted_types(data=sio.dumps(pipeline)))
 
 
 def _parity_figure(r: Result):

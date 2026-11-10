@@ -128,18 +128,24 @@ def cell_features(
     feats["fade_slope_2_100"], feats["fade_intercept_2_100"] = _fit(cyc, q)
     late = (cyc >= 91) & (cyc <= 100)
     feats["fade_slope_91_100"], feats["fade_intercept_91_100"] = _fit(cyc[late], q[late])
-    feats["qd2"] = float(s.at[2, "vendor_discharge_capacity_ah"]) if 2 in s.index else float("nan")
+    n = int(s.index.max()) if len(s) else 0
+    c2, c100s = _nearest_good(2, good_cycles, n), _nearest_good(100, good_cycles, n)
+
+    def at(cycle: int, col: str) -> float:
+        return float(s.at[cycle, col]) if cycle in s.index else float("nan")
+
+    feats["qd2"] = at(c2, "vendor_discharge_capacity_ah")
     feats["qd_max_minus_2"] = float(np.nanmax(q) - feats["qd2"])
-    feats["qd100"] = float(s.at[100, "vendor_discharge_capacity_ah"]) if 100 in s.index else float("nan")
+    feats["qd100"] = at(c100s, "vendor_discharge_capacity_ah")
     feats["charge_time_first5"] = float(s.loc[2:6, "vendor_charge_time_min"].mean())
     feats["t_max_2_100"] = float(early["vendor_temperature_max_c"].max())
     feats["t_min_2_100"] = float(early["vendor_temperature_min_c"].min())
     # mean per-cycle integral x 99 cycles = the sum when no cycle is dropped
     feats["t_integral_2_100"] = float(m.loc[2:100, "temperature_integral_c_min"].mean() * 99)
     ir = early["ir_ohm"].where(early["ir_ohm"] > 0)
-    feats["ir2"] = float(ir.get(2, np.nan))
+    feats["ir2"] = float(ir.get(c2, np.nan))
     feats["ir_min_2_100"] = float(ir.min())
-    feats["ir_diff_100_2"] = float(ir.get(100, np.nan) - ir.get(2, np.nan))
+    feats["ir_diff_100_2"] = float(ir.get(c100s, np.nan) - ir.get(c2, np.nan))
 
     if tdlin is not None:
         dt = delta_q(tdlin, c100, c10)

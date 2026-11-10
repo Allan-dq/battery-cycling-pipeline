@@ -1,0 +1,46 @@
+# docker compose up                 -> pipeline on the committed sample, then API on :8000 and MLflow UI on :5000
+# docker compose --profile full run --rm full   -> the full run on ./data/raw (download first: make data)
+services:
+  pipeline:
+    build: .
+    image: battery-cycling-pipeline
+    command: ["all", "--raw", "tests/fixtures", "--nasa", "tests/fixtures/nasa", "--root", "/data/sample", "--workers", "2"]
+    volumes:
+      - lake:/data
+
+  api:
+    image: battery-cycling-pipeline
+    entrypoint: ["uvicorn", "battery_pipeline.api:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      BCP_ROOT: /data/sample
+    volumes:
+      - lake:/data
+    ports:
+      - "8000:8000"
+    depends_on:
+      pipeline:
+        condition: service_completed_successfully
+
+  mlflow:
+    image: battery-cycling-pipeline
+    entrypoint: ["mlflow", "server", "--backend-store-uri", "sqlite:////data/sample/mlflow.db",
+                 "--host", "0.0.0.0", "--port", "5000"]
+    volumes:
+      - lake:/data
+    ports:
+      - "5000:5000"
+    depends_on:
+      pipeline:
+        condition: service_completed_successfully
+
+  full:
+    profiles: ["full"]
+    image: battery-cycling-pipeline
+    command: ["all", "--raw", "data/raw/matr", "--nasa", "data/raw/nasa/extracted", "--root", "data/processed",
+              "--reports", "reports", "--workers", "4"]
+    volumes:
+      - ./data:/app/data
+      - ./reports:/app/reports
+
+volumes:
+  lake:

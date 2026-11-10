@@ -119,7 +119,9 @@ def ingest_matr(
 
         cells = pd.DataFrame(registry.values()).drop(columns=["last_time_s"])
         life = {
-            cid: matr.cycle_life_from_summary(g.sort_values("cycle_index")["vendor_discharge_capacity_ah"].to_numpy())
+            cid: matr.cycle_life_from_summary(
+                g.sort_values("cycle_index")["vendor_discharge_capacity_ah"].to_numpy()
+            )
             for cid, g in vendor.groupby("cell_id")
         }
         cells["cycle_life"] = cells["cell_id"].map(life).astype(float)

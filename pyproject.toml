@@ -58,3 +58,7 @@ target-version = "py313"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP"]
 ignore = ["E501"]
+
+[tool.ruff.lint.flake8-bugbear]
+# frozen dataclasses, safe as defaults
+extend-immutable-calls = ["battery_pipeline.quality.CycleRules", "battery_pipeline.quality.CellRules"]

@@ -1,7 +1,7 @@
 """Command line: ``bcp <stage>`` or ``bcp all``.
 
-    bcp all                                                   # full run on the downloaded files
-    bcp all --raw tests/fixtures --nasa tests/fixtures/nasa --root out/sample   # committed sample
+bcp all                                                   # full run on the downloaded files
+bcp all --raw tests/fixtures --nasa tests/fixtures/nasa --root out/sample   # committed sample
 """
 
 from __future__ import annotations
@@ -30,13 +30,21 @@ def _log(msg: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(prog="bcp", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        prog="bcp", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("stage", choices=["ingest", "process", "warehouse", "train", "report", "all"])
     ap.add_argument("--raw", type=Path, default=Path("data/raw/matr"), help="folder with MATR .mat files")
-    ap.add_argument("--nasa", type=Path, default=Path("data/raw/nasa/extracted"),
-                    help="folder searched for NASA PCoE B00xx.mat files (skipped if absent)")
+    ap.add_argument(
+        "--nasa",
+        type=Path,
+        default=Path("data/raw/nasa/extracted"),
+        help="folder searched for NASA PCoE B00xx.mat files (skipped if absent)",
+    )
     ap.add_argument("--root", type=Path, default=DEFAULT_ROOT, help="lake / warehouse folder")
-    ap.add_argument("--reports", type=Path, default=None, help="where results.json/.md go (default: <root>/reports)")
+    ap.add_argument(
+        "--reports", type=Path, default=None, help="where results.json/.md go (default: <root>/reports)"
+    )
     ap.add_argument("--tracking", type=Path, default=None, help="MLflow store folder (default: <root>)")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--no-register", action="store_true", help="skip MLflow model registration")

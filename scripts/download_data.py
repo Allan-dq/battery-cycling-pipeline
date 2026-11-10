@@ -53,7 +53,10 @@ def fetch(url: str, dest: Path, size: int | None, retries: int = 8) -> None:
         if have:
             req.add_header("Range", f"bytes={have}-")
         try:
-            with urllib.request.urlopen(req, timeout=60, context=SSL_CONTEXT) as resp, part.open("ab" if have else "wb") as out:
+            with (
+                urllib.request.urlopen(req, timeout=60, context=SSL_CONTEXT) as resp,
+                part.open("ab" if have else "wb") as out,
+            ):
                 if have and resp.status != 206:  # server ignored Range: start over
                     out.seek(0)
                     out.truncate()
@@ -91,7 +94,9 @@ def main(argv: list[str] | None = None) -> int:
         for f in ds["files"]:
             dest = folder / f["name"]
             if not dest.exists() and not args.verify_only:
-                print(f"downloading {f['name']} ({f.get('bytes', 0) / 1e9:.2f} GB) from {f['url']}", flush=True)
+                print(
+                    f"downloading {f['name']} ({f.get('bytes', 0) / 1e9:.2f} GB) from {f['url']}", flush=True
+                )
                 fetch(f["url"], dest, f.get("bytes"))
             if not dest.exists():
                 print(f"MISSING  {dest.relative_to(ROOT)}")

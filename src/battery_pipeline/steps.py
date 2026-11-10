@@ -8,7 +8,9 @@ import numpy as np
 REST_CURRENT_A = 0.005
 
 
-def label_steps(current_a: np.ndarray, rest_current_a: float = REST_CURRENT_A) -> tuple[np.ndarray, np.ndarray]:
+def label_steps(
+    current_a: np.ndarray, rest_current_a: float = REST_CURRENT_A
+) -> tuple[np.ndarray, np.ndarray]:
     """Return ``(step_type, step_index)`` for each sample.
 
     ``step_type`` is "charge" (I > threshold), "discharge" (I < -threshold) or

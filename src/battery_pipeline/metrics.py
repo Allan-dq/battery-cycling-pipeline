@@ -25,7 +25,9 @@ def _integral(y: np.ndarray, t: np.ndarray) -> float:
     return float(_trapz(y[ok], t[ok]))
 
 
-def _dcir_proxy(step_type: np.ndarray, current: np.ndarray, voltage: np.ndarray, min_step_a: float = 0.5) -> float:
+def _dcir_proxy(
+    step_type: np.ndarray, current: np.ndarray, voltage: np.ndarray, min_step_a: float = 0.5
+) -> float:
     """|ΔV/ΔI| across the first sample that enters a discharge step.
 
     It includes whatever polarisation builds up within one sampling

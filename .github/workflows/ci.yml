@@ -1,0 +1,47 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install
+        run: pip install -e ".[api,dev]"
+      - name: Lint
+        run: ruff check src tests scripts
+      - name: Unit + integration + end-to-end tests
+        run: pytest -q --cov=battery_pipeline --cov-report=term-missing
+        env:
+          MPLBACKEND: Agg
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker compose build pipeline
+      - name: Pipeline end to end on the committed sample
+        run: docker compose run --rm pipeline
+      - name: API and MLflow come up on the pipeline's output
+        run: |
+          docker compose up -d api mlflow
+          for i in $(seq 1 30); do curl -fs localhost:8000/health && break; sleep 2; done
+          curl -fs localhost:8000/cells/b1c1 | head -c 400; echo
+          curl -fs localhost:8000/metrics | grep bcp_rows_processed_total
+          for i in $(seq 1 30); do curl -fs localhost:5000/health && break; sleep 2; done
+      - name: Logs
+        if: always()
+        run: docker compose logs --no-color | tail -100
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

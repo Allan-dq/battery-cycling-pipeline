@@ -26,7 +26,9 @@ class CycleRules:
     t_min_c: float = 15.0  # chamber is held at 30 °C
     t_max_c: float = 60.0
     max_temp_step_c: float = 3.0  # |ΔT| between consecutive 5 s samples
-    capacity_rel_tol: float = 0.02  # coulomb counting vs dataset-reported discharge capacity
+    # coulomb counting vs dataset-reported discharge capacity, measured against the
+    # cell's own median offset (a constant calibration offset is not a broken cycle)
+    capacity_rel_tol: float = 0.02
     ce_min: float = 0.95
     ce_max: float = 1.05
 
@@ -114,13 +116,20 @@ def cycle_flags(ts: pd.DataFrame, cycles: pd.DataFrame, rules: CycleRules = Cycl
     same_fp = agg.groupby("cell_id")["fingerprint"].diff().abs() < 1e-9
     out["duplicate_cycle"] = same_n & same_fp & ~empty
     out["time_gap"] = (agg["max_time_gap_s"] > rules.max_gap_s) & ~empty
-    for name in ("time_not_monotonic", "voltage_out_of_range", "current_out_of_range",
-                 "temperature_out_of_range", "temperature_spike"):
+    for name in (
+        "time_not_monotonic",
+        "voltage_out_of_range",
+        "current_out_of_range",
+        "temperature_out_of_range",
+        "temperature_spike",
+    ):
         out[name] = agg[name].fillna(False).astype(bool) & ~empty
     out["temperature_missing"] = (agg["temperature_missing"].fillna(1.0) > 0.5) & ~empty
     vendor = agg["vendor_discharge_capacity_ah"]
-    rel = (agg["discharge_capacity_ah"] - vendor).abs() / vendor.where(vendor > 0)
-    out["capacity_mismatch"] = (rel > rules.capacity_rel_tol) & ~empty
+    rel = (agg["discharge_capacity_ah"] - vendor) / vendor.where(vendor > 0)
+    offset = rel.where(~empty).groupby(agg["cell_id"]).transform("median")
+    out["capacity_rel_diff"] = rel
+    out["capacity_mismatch"] = ((rel - offset).abs() > rules.capacity_rel_tol) & ~empty
     ce = agg["coulombic_efficiency"]
     out["ce_out_of_range"] = ((ce < rules.ce_min) | (ce > rules.ce_max)) & ~empty
     out["any_flag"] = out[list(CYCLE_FLAGS)].any(axis=1)
@@ -137,16 +146,22 @@ def robust_z(x: pd.Series) -> pd.Series:
     return 0.6745 * (x - med) / mad
 
 
-def cell_indicators(cycles: pd.DataFrame, flags: pd.DataFrame, rules: CellRules = CellRules()) -> pd.DataFrame:
+def cell_indicators(
+    cycles: pd.DataFrame, flags: pd.DataFrame, rules: CellRules = CellRules()
+) -> pd.DataFrame:
     """Per-cell indicators over the early window (cycles 2-100 by default)."""
     in_win = (cycles["cycle_index"] >= rules.early_first) & (cycles["cycle_index"] <= rules.early_last)
-    good = cycles.merge(flags[["cell_id", "cycle_index", "bad_cycle"]], on=["cell_id", "cycle_index"], how="left")
+    good = cycles.merge(
+        flags[["cell_id", "cycle_index", "bad_cycle"]], on=["cell_id", "cycle_index"], how="left"
+    )
     win = cycles[in_win & ~good["bad_cycle"].fillna(False).to_numpy()]
     fwin = flags[(flags["cycle_index"] >= rules.early_first) & (flags["cycle_index"] <= rules.early_last)]
     rows = []
     for cell_id, g in win.groupby("cell_id"):
         g = g.sort_values("cycle_index")
-        q = g["vendor_discharge_capacity_ah"].where(g["vendor_discharge_capacity_ah"] > 0, g["discharge_capacity_ah"])
+        q = g["vendor_discharge_capacity_ah"].where(
+            g["vendor_discharge_capacity_ah"] > 0, g["discharge_capacity_ah"]
+        )
         ok = q.notna()
         slope = np.polyfit(g.loc[ok, "cycle_index"], q[ok], 1)[0] if ok.sum() >= 10 else np.nan
         f = fwin[fwin["cell_id"] == cell_id]
@@ -160,6 +175,7 @@ def cell_indicators(cycles: pd.DataFrame, flags: pd.DataFrame, rules: CellRules 
                 "ir_mean_mohm": g["ir_ohm"].where(g["ir_ohm"] > 0).mean() * 1e3,
                 "dcir_proxy_mean_mohm": g["dcir_proxy_ohm"].mean() * 1e3,
                 "ce_median": g["coulombic_efficiency"].median(),
+                "capacity_offset_pct": float(f["capacity_rel_diff"].median() * 100) if len(f) else np.nan,
                 "temp_fault_frac": float(temp_fault.mean()) if len(f) else np.nan,
                 "flagged_cycle_frac": float(f["any_flag"].mean()) if len(f) else np.nan,
                 "bad_cycle_frac": float(f["bad_cycle"].mean()) if len(f) else np.nan,
@@ -202,8 +218,14 @@ def cell_flags(
     ind["flag_ce"] = ind["z_ce"].abs() > rules.robust_z
     ind["flag_temperature_sensor"] = ind["temp_fault_frac"] > rules.temp_fault_frac
 
-    features = ["fade_slope_mah_per_cycle", "temperature_residual_c", "ir_mean_mohm", "ce_median",
-                "temp_fault_frac", "bad_cycle_frac"]
+    features = [
+        "fade_slope_mah_per_cycle",
+        "temperature_residual_c",
+        "ir_mean_mohm",
+        "ce_median",
+        "temp_fault_frac",
+        "bad_cycle_frac",
+    ]
     x = ind[features].astype(float)
     x = x.fillna(x.median())
     ind["iforest_score"] = np.nan

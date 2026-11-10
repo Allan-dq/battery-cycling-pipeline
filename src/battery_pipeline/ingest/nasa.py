@@ -118,7 +118,8 @@ def read_cell(path: Path) -> NasaCell:
     s = pd.DataFrame(summary)
     if len(s):
         s = s.groupby("cycle_index", as_index=False).agg(
-            vendor_discharge_capacity_ah=("vendor_discharge_capacity_ah", "sum"), ambient_c=("ambient_c", "first")
+            vendor_discharge_capacity_ah=("vendor_discharge_capacity_ah", "sum"),
+            ambient_c=("ambient_c", "first"),
         )
     readme = next(iter(sorted(path.parent.glob("README*.txt"))), None)
     return NasaCell(
