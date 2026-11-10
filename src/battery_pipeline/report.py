@@ -53,6 +53,8 @@ def compute(lake: Lake) -> dict:
             "capacity_offset_pct_p10": float(sg.quantile(0.1) * 100),
             "capacity_offset_pct_p90": float(sg.quantile(0.9) * 100),
             "bad_cycle_pct": float(g["bad_cycle"].mean() * 100),
+            # what an absolute 2% rule (the first version of capacity_mismatch) would flag
+            "fixed_2pct_rule_flag_pct": float((sg.abs() > 0.02).mean() * 100),
             "coulombic_efficiency_median": float(g["coulombic_efficiency"].median()),
         }
 
@@ -158,14 +160,14 @@ def markdown(r: dict) -> str:
         f"- Median DCIR proxy {_fmt(mv['dcir_proxy_mohm_median'], 1)} mΩ vs. dataset pulse IR "
         f"{_fmt(mv['dataset_ir_mohm_median'], 1)} mΩ (MATR).",
         "",
-        "| Group | Cells | Cycles | Coulomb counting vs. dataset capacity, median (p10–p90) | Bad cycles | Median CE |",
-        "|---|---:|---:|---|---:|---:|",
+        "| Group | Cells | Cycles | Coulomb counting vs. dataset capacity, median (p10–p90) | Cycles a fixed 2% rule would flag | Bad cycles (offset-relative rule) | Median CE |",
+        "|---|---:|---:|---|---:|---:|---:|",
     ]
     for grp, g in mv["by_group"].items():
         lines.append(
             f"| {grp} | {g['cells']} | {g['cycles']:,} | {g['capacity_offset_pct_median']:+.2f}% "
             f"({g['capacity_offset_pct_p10']:+.2f}% to {g['capacity_offset_pct_p90']:+.2f}%) | "
-            f"{g['bad_cycle_pct']:.1f}% | {g['coulombic_efficiency_median']:.4f} |"
+            f"{g['fixed_2pct_rule_flag_pct']:.1f}% | {g['bad_cycle_pct']:.1f}% | {g['coulombic_efficiency_median']:.4f} |"
         )
     lines += [
         "",
@@ -245,6 +247,13 @@ SPLIT_NAMES = {
 }
 
 
+def _cycles(x: float, signed: bool = False) -> str:
+    if not signed and abs(x) < 1:
+        return "under 1 cycle"
+    n = round(x)
+    return f"{n:+d} cycle{'s' if abs(n) != 1 else ''}" if signed else f"{n:d} cycle{'s' if n != 1 else ''}"
+
+
 def findings(r: dict) -> list[str]:
     """Plain-language comparisons, every number computed from the results."""
     m = r["models"]
@@ -263,17 +272,22 @@ def findings(r: dict) -> list[str]:
 
         (gc, kc), (gr, kr) = worst(clean), worst(raw)
         out.append(
-            f"- `{name}`: largest RMSE gap to the paper is {gc:+.0f} cycles ({kc}) with QC cleaning "
-            f"and {gr:+.0f} cycles ({kr}) without."
+            f"- `{name}`: largest RMSE gap to the paper is {_cycles(gc, signed=True)} ({kc}) with QC cleaning "
+            f"and {_cycles(gr, signed=True)} ({kr}) without."
         )
     qe = r.get("qc_effect")
     if qe:
         out.append(
             f"- QC cleaning matters most for `{qe['model']}` on the primary test set "
             f"({qe['rmse_clean']:.0f} vs. {qe['rmse_raw']:.0f} cycles). Most of the difference is one cell, "
-            f"`{qe['cell_id']}` (observed {qe['observed']:.0f} cycles): predicted {qe['pred_raw']:.0f} from "
-            f"uncleaned features and {qe['pred_clean']:.0f} after its {qe['bad_cycles']} broken early cycle(s) "
-            f"are dropped."
+            f"`{qe['cell_id']}` (observed {qe['observed']:.0f} cycles): predicted {_cycles(qe['pred_raw'])} from "
+            f"uncleaned features and {_cycles(qe['pred_clean'])} after its broken early cycle(s) are dropped ("
+            + "; ".join(
+                f"cycle {b['cycle']}: dataset capacity {b['dataset_capacity_ah']:.2f} Ah, coulomb-counted "
+                f"{b['coulomb_counted_ah']:.2f} Ah over {b['duration_s'] / 3600:.1f} h"
+                for b in qe["broken_cycles"]
+            )
+            + ")."
         )
     sel, base = models[m["selected_candidate"]], models[m["best_baseline_by_cv"]]
     verdict = []
@@ -316,7 +330,21 @@ def qc_effect(lake: Lake, models: dict) -> dict | None:
     err = (raw["predicted"] - raw["cycle_life"]).abs() - (clean["predicted"] - clean["cycle_life"]).abs()
     cell = str(err.idxmax())
     feats = pd.read_parquet(lake.table("features")).set_index("cell_id")
+    flags = pd.read_parquet(lake.table("qc_cycle_flags"), filters=[("cell_id", "==", cell)])
+    cyc = pd.read_parquet(lake.table("cycles"), filters=[("cell_id", "==", cell)])
+    bad = flags[flags["bad_cycle"] & flags["cycle_index"].between(2, 100)][["cycle_index"]].merge(
+        cyc, on="cycle_index"
+    )
     return {
+        "broken_cycles": [
+            {
+                "cycle": int(b.cycle_index),
+                "dataset_capacity_ah": float(b.vendor_discharge_capacity_ah),
+                "coulomb_counted_ah": float(b.discharge_capacity_ah),
+                "duration_s": float(b.duration_s),
+            }
+            for b in bad.itertuples()
+        ],
         "model": name,
         "rmse_clean": models[name]["rmse"]["test1"],
         "rmse_raw": models[f"{name}_noqc"]["rmse"]["test1"],

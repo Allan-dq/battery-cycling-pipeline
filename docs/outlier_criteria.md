@@ -77,7 +77,9 @@ engineer's review queue rather than silently drop them.
   cycle with the cell's own median offset instead of with zero. Batch 3's
   dataset capacities read 0.3–3.6% below coulomb counting on every cycle (a
   batch-level calibration/processing difference; batches 1–2 agree within
-  0.05%), and the absolute 2% rule had marked 36% of batch-3 cycles as broken.
+  0.05%); an absolute 2% rule would flag 43.7% of batch-3 cycles
+  (`fixed_2pct_rule_flag_pct` in `reports/results.json`) against 0.2% for the
+  offset-relative rule.
   (2) The end-of-life rule above replaced "first cycle below 0.88 Ah", which
   had missed every test that stopped at 0.8801–0.8806 Ah. (3) Cell results
   are reported in the two groups above. No threshold was changed.

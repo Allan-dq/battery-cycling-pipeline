@@ -10,12 +10,12 @@
 - Median coulombic efficiency 0.9998, median energy efficiency 0.865.
 - Median DCIR proxy 19.6 mΩ vs. dataset pulse IR 16.5 mΩ (MATR).
 
-| Group | Cells | Cycles | Coulomb counting vs. dataset capacity, median (p10–p90) | Bad cycles | Median CE |
-|---|---:|---:|---|---:|---:|
-| b1 | 46 | 42,158 | +0.04% (+0.03% to +0.05%) | 4.1% | 0.9991 |
-| b2 | 43 | 21,527 | +0.04% (+0.04% to +0.05%) | 2.9% | 0.9984 |
-| b3 | 46 | 51,007 | +1.66% (+0.30% to +3.64%) | 0.2% | 1.0053 |
-| nasa | 34 | 2,835 | +2.06% (+0.22% to +23.71%) | 31.4% | 0.9964 |
+| Group | Cells | Cycles | Coulomb counting vs. dataset capacity, median (p10–p90) | Cycles a fixed 2% rule would flag | Bad cycles (offset-relative rule) | Median CE |
+|---|---:|---:|---|---:|---:|---:|
+| b1 | 46 | 42,158 | +0.04% (+0.03% to +0.05%) | 0.1% | 4.1% | 0.9991 |
+| b2 | 43 | 21,527 | +0.04% (+0.04% to +0.05%) | 0.1% | 2.9% | 0.9984 |
+| b3 | 46 | 51,007 | +1.66% (+0.30% to +3.64%) | 43.7% | 0.2% | 1.0053 |
+| nasa | 34 | 2,835 | +2.06% (+0.22% to +23.71%) | 48.9% | 31.4% | 0.9964 |
 
 ### Data quality
 
@@ -33,10 +33,14 @@
 | `capacity_mismatch` | 157 | 698 |
 | `ce_out_of_range` | 2,106 | 471 |
 
-- Anomalous MATR cells (any cell-level rule): 22 — b1c20, b1c21, b1c3, b1c31, b1c4, b2c0, b2c1, b2c12, b2c13, b2c18, b2c19, b2c23, b2c25, b2c3, b2c36, b2c4, b2c6, b3c17, b3c21, b3c28, b3c29, b3c6.
-- Anomalous NASA cells: 5 — nasa_B0034, nasa_B0040, nasa_B0042, nasa_B0050, nasa_B0051.
-- Of the 6 batch-3 cells the paper dropped as noisy, the cell rules flag 0: none.
-- Of the 5 batch-1 cells the paper dropped for not reaching 80%, our end-of-life computation also finds 5.
+| Cell-level result | MATR | NASA |
+|---|---|---|
+| Degradation outliers (early fade, \|z\| > 3.5) | 15: b1c20, b1c21, b2c0, b2c1, b2c12, b2c13, b2c18, b2c19, b2c23, b2c3, b2c4, b2c6, b3c21, b3c28, b3c6 | 2: nasa_B0040, nasa_B0051 |
+| Measurement anomalies (temperature, IR, CE, sensor, isolation forest) | 11: b1c3, b1c31, b1c4, b2c0, b2c1, b2c25, b2c36, b3c17, b3c28, b3c29, b3c6 | 4: nasa_B0034, nasa_B0040, nasa_B0042, nasa_B0050 |
+
+- Cycle life: our end-of-life rule reproduces the dataset's reported cycle life exactly for 128 of 128 MATR cells (max difference 0 cycles).
+- Of the 5 batch-1 cells the authors dropped for not reaching 80%, our rule finds 5 (7 MATR cells in total never reach 80%).
+- Of the 6 batch-3 cells the authors' loader drops as noisy, 2 never reached 80% (b3c23, b3c32); the cell-level rules flag 0 of the six.
 
 ### Early-cycle life prediction (paper split)
 
@@ -64,9 +68,10 @@ Candidate chosen by training-set CV only: **enet_discharge_ica** (best baseline 
 
 **What the table says**
 
-- `variance` without QC cleaning vs. the paper: RMSE within 1 cycles on every split (largest gap on the train set). With QC cleaning: primary test 138 vs. 138, secondary test 196 vs. 196 cycles.
-- `discharge` without QC cleaning vs. the paper: RMSE within 226 cycles on every split (largest gap on the primary test excl. set). With QC cleaning: primary test 86 vs. 311, secondary test 169 vs. 168 cycles.
-- `full` without QC cleaning vs. the paper: RMSE within 60 cycles on every split (largest gap on the primary test excl. set). With QC cleaning: primary test 158 vs. 161, secondary test 213 vs. 194 cycles.
+- `variance`: largest RMSE gap to the paper is +1 cycle (primary test excl.) with QC cleaning and +1 cycle (train) without.
+- `discharge`: largest RMSE gap to the paper is -6 cycles (train) with QC cleaning and +226 cycles (primary test excl.) without.
+- `full`: largest RMSE gap to the paper is +56 cycles (primary test excl.) with QC cleaning and +60 cycles (primary test excl.) without.
+- QC cleaning matters most for `discharge` on the primary test set (86 vs. 311 cycles). Most of the difference is one cell, `b1c0` (observed 1852 cycles): predicted under 1 cycle from uncleaned features and 2064 cycles after its broken early cycle(s) are dropped (cycle 12: dataset capacity 1.54 Ah, coulomb-counted 3.18 Ah over 10.7 h).
 - Selected candidate `enet_discharge_ica` vs. best baseline `discharge`: primary test excl. 90 vs. 80 (+9); secondary test 163 vs. 169 (-6). It does not beat the baseline on both test sets.
-- Cells with a missing feature are left out of that model only: `full` scores 41/43/40 train/primary/secondary cells (the paper dropped 4 cells from its full model for lost temperature probes).
+- `full` is scored on 41/43/40 train/primary/secondary cells; the paper dropped 4 cells from its full model because temperature probes lost contact, and our temperature checks do not single those out.
 

@@ -33,6 +33,7 @@
         "capacity_offset_pct_p10": 0.03416798823451562,
         "capacity_offset_pct_p90": 0.04745868632651671,
         "bad_cycle_pct": 4.068029792684662,
+        "fixed_2pct_rule_flag_pct": 0.1399497129844869,
         "coulombic_efficiency_median": 0.9990836104904868
       },
       "b2": {
@@ -42,6 +43,7 @@
         "capacity_offset_pct_p10": 0.0374031541525891,
         "capacity_offset_pct_p90": 0.05009793289746026,
         "bad_cycle_pct": 2.88939471361546,
+        "fixed_2pct_rule_flag_pct": 0.09290658243136525,
         "coulombic_efficiency_median": 0.9983623948421597
       },
       "b3": {
@@ -51,6 +53,7 @@
         "capacity_offset_pct_p10": 0.2994241255419606,
         "capacity_offset_pct_p90": 3.64220067847427,
         "bad_cycle_pct": 0.20781461368047524,
+        "fixed_2pct_rule_flag_pct": 43.73321308839963,
         "coulombic_efficiency_median": 1.0052732585963904
       },
       "nasa": {
@@ -60,14 +63,15 @@
         "capacity_offset_pct_p10": 0.21569517330885268,
         "capacity_offset_pct_p90": 23.705764507580643,
         "bad_cycle_pct": 31.428571428571427,
+        "fixed_2pct_rule_flag_pct": 48.888888888888886,
         "coulombic_efficiency_median": 0.9963679703135149
       }
     }
   },
   "cycle_life_check": {
-    "cells_compared": 43,
-    "exact_match": 43,
-    "within_1_cycle": 43,
+    "cells_compared": 128,
+    "exact_match": 128,
+    "within_1_cycle": 128,
     "max_abs_diff": 0.0
   },
   "qc": {
@@ -235,6 +239,50 @@
         "nasa_B0051"
       ]
     },
+    "degradation_outliers": {
+      "matr": [
+        "b1c20",
+        "b1c21",
+        "b2c0",
+        "b2c1",
+        "b2c12",
+        "b2c13",
+        "b2c18",
+        "b2c19",
+        "b2c23",
+        "b2c3",
+        "b2c4",
+        "b2c6",
+        "b3c21",
+        "b3c28",
+        "b3c6"
+      ],
+      "nasa": [
+        "nasa_B0040",
+        "nasa_B0051"
+      ]
+    },
+    "measurement_anomalies": {
+      "matr": [
+        "b1c3",
+        "b1c31",
+        "b1c4",
+        "b2c0",
+        "b2c1",
+        "b2c25",
+        "b2c36",
+        "b3c17",
+        "b3c28",
+        "b3c29",
+        "b3c6"
+      ],
+      "nasa": [
+        "nasa_B0034",
+        "nasa_B0040",
+        "nasa_B0042",
+        "nasa_B0050"
+      ]
+    },
     "vs_paper": {
       "paper_noisy_batch3": [
         "b3c2",
@@ -245,6 +293,10 @@
         "b3c43"
       ],
       "paper_noisy_we_flag": [],
+      "paper_noisy_never_reached_eol": [
+        "b3c23",
+        "b3c32"
+      ],
       "paper_no_eol_batch1": [
         "b1c10",
         "b1c12",
@@ -259,107 +311,14 @@
         "b1c22",
         "b1c8"
       ],
-      "we_find_no_eol": [
-        "b1c0",
-        "b1c1",
+      "we_find_no_eol_matr": [
         "b1c10",
-        "b1c11",
         "b1c12",
         "b1c13",
-        "b1c14",
-        "b1c15",
-        "b1c16",
-        "b1c17",
-        "b1c18",
-        "b1c19",
-        "b1c2",
-        "b1c20",
-        "b1c21",
         "b1c22",
-        "b1c23",
-        "b1c24",
-        "b1c25",
-        "b1c26",
-        "b1c27",
-        "b1c28",
-        "b1c29",
-        "b1c3",
-        "b1c30",
-        "b1c31",
-        "b1c32",
-        "b1c33",
-        "b1c34",
-        "b1c35",
-        "b1c36",
-        "b1c37",
-        "b1c38",
-        "b1c39",
-        "b1c4",
-        "b1c40",
-        "b1c41",
-        "b1c42",
-        "b1c43",
-        "b1c44",
-        "b1c45",
-        "b1c5",
-        "b1c6",
-        "b1c7",
         "b1c8",
-        "b1c9",
-        "b3c0",
-        "b3c1",
-        "b3c10",
-        "b3c11",
-        "b3c12",
-        "b3c13",
-        "b3c14",
-        "b3c15",
-        "b3c16",
-        "b3c17",
-        "b3c18",
-        "b3c19",
-        "b3c2",
-        "b3c20",
-        "b3c21",
-        "b3c22",
         "b3c23",
-        "b3c24",
-        "b3c25",
-        "b3c26",
-        "b3c27",
-        "b3c28",
-        "b3c29",
-        "b3c3",
-        "b3c30",
-        "b3c31",
-        "b3c32",
-        "b3c33",
-        "b3c34",
-        "b3c35",
-        "b3c36",
-        "b3c37",
-        "b3c38",
-        "b3c39",
-        "b3c4",
-        "b3c40",
-        "b3c41",
-        "b3c42",
-        "b3c43",
-        "b3c44",
-        "b3c45",
-        "b3c5",
-        "b3c6",
-        "b3c7",
-        "b3c8",
-        "b3c9",
-        "nasa_B0007",
-        "nasa_B0025",
-        "nasa_B0027",
-        "nasa_B0028",
-        "nasa_B0029",
-        "nasa_B0030",
-        "nasa_B0031",
-        "nasa_B0032"
+        "b3c32"
       ]
     }
   },
@@ -895,5 +854,23 @@
         }
       }
     }
+  },
+  "qc_effect": {
+    "broken_cycles": [
+      {
+        "cycle": 12,
+        "dataset_capacity_ah": 1.5390544,
+        "coulomb_counted_ah": 3.1831837326636903,
+        "duration_s": 38567.060699999995
+      }
+    ],
+    "model": "discharge",
+    "rmse_clean": 86.12435188087694,
+    "rmse_raw": 310.56603213400274,
+    "cell_id": "b1c0",
+    "observed": 1852.0,
+    "pred_clean": 2063.562297902395,
+    "pred_raw": 0.0019773085961943744,
+    "bad_cycles": 1
   }
 }
