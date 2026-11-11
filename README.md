@@ -156,7 +156,7 @@ re-implementation from the paper's text.
 ```bash
 make install        # Python 3.13 venv (cellpy 2.x needs 3.13)
 make data           # 8.5 GB download, checksums verified
-make all            # ingest, metrics, QC, train, report: about 8.5 min on an Apple M1 Pro
+make all            # ingest, metrics, QC, train, report: 503 s (8.4 min) on an Apple M1 Pro
 python scripts/update_readme.py
 make test           # unit + integration + end-to-end on the committed fixtures
 ```
