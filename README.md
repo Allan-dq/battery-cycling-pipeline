@@ -27,6 +27,11 @@ prediction against a published result.
   real-data fixtures, Docker + docker compose, GitHub Actions CI, MLflow
   tracking and model registry, a FastAPI read API and Prometheus metrics.
 
+**Run it:** `docker compose up` runs the pipeline end to end on the committed
+sample (no download), then serves the API on :8000 and the MLflow UI on :5000.
+The full run is `make install && make data && make all` (8.5 GB download;
+503 s (8.4 min) on an Apple M1 Pro); see [Reproduce](#reproduce).
+
 ## Results
 
 Every number below is produced by `make all` (`bcp all` + `bcp report`) and
